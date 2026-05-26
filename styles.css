@@ -1,0 +1,325 @@
+/* =============================================================================
+ * Claude Section Navigator — styles
+ * Tuned to sit quietly next to Claude's own UI. Light + dark aware.
+ * ========================================================================== */
+
+#csn-pane {
+  /* light theme defaults */
+  --csn-bg: #faf9f5;
+  --csn-bg-soft: #f2f0e9;
+  --csn-border: rgba(60, 55, 45, 0.12);
+  --csn-text: #2b2a27;
+  --csn-text-dim: #75716a;
+  --csn-accent: #c96442;          /* Claude's warm coral */
+  --csn-accent-soft: rgba(201, 100, 66, 0.12);
+  --csn-hover: rgba(60, 55, 45, 0.06);
+  --csn-shadow: rgba(40, 35, 30, 0.08);
+
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 290px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: var(--csn-bg);
+  border-right: 1px solid var(--csn-border);
+  font-family: ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+  color: var(--csn-text);
+  box-shadow: 1px 0 0 var(--csn-shadow);
+  transition: width 0.2s ease;
+  overflow: hidden;
+}
+
+/* dark theme — Claude sets a `dark` class / data-theme on <html> */
+html.dark #csn-pane,
+html[data-theme="dark"] #csn-pane,
+html[data-mode="dark"] #csn-pane {
+  --csn-bg: #1f1e1c;
+  --csn-bg-soft: #2a2825;
+  --csn-border: rgba(255, 255, 255, 0.1);
+  --csn-text: #f1efe9;
+  --csn-text-dim: #a3a097;
+  --csn-accent: #d97757;
+  --csn-accent-soft: rgba(217, 119, 87, 0.16);
+  --csn-hover: rgba(255, 255, 255, 0.06);
+  --csn-shadow: rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light):not([data-theme="light"]) #csn-pane {
+    --csn-bg: #1f1e1c;
+    --csn-bg-soft: #2a2825;
+    --csn-border: rgba(255, 255, 255, 0.1);
+    --csn-text: #f1efe9;
+    --csn-text-dim: #a3a097;
+    --csn-accent: #d97757;
+    --csn-accent-soft: rgba(217, 119, 87, 0.16);
+    --csn-hover: rgba(255, 255, 255, 0.06);
+    --csn-shadow: rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* ---- header --------------------------------------------------------------- */
+#csn-pane .csn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 10px 16px;
+  flex-shrink: 0;
+}
+#csn-pane .csn-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--csn-text);
+}
+#csn-pane .csn-collapse,
+#csn-pane .csn-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--csn-text-dim);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+#csn-pane .csn-collapse:hover,
+#csn-pane .csn-expand:hover {
+  background: var(--csn-hover);
+  color: var(--csn-text);
+}
+
+/* ---- body / scroll area --------------------------------------------------- */
+#csn-pane .csn-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 8px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--csn-border) transparent;
+}
+#csn-pane .csn-body::-webkit-scrollbar { width: 8px; }
+#csn-pane .csn-body::-webkit-scrollbar-thumb {
+  background: var(--csn-border);
+  border-radius: 8px;
+}
+
+#csn-pane .csn-section { margin-bottom: 6px; }
+#csn-pane .csn-section-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--csn-text-dim);
+  padding: 10px 8px 6px;
+}
+#csn-pane .csn-starred-wrap .csn-section-label { color: var(--csn-accent); }
+
+#csn-pane .csn-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---- items ---------------------------------------------------------------- */
+#csn-pane .csn-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px 6px 4px;
+  border-radius: 8px;
+  cursor: default;
+  position: relative;
+  transition: background 0.12s;
+}
+#csn-pane .csn-item:hover { background: var(--csn-hover); }
+
+#csn-pane .csn-num {
+  flex-shrink: 0;
+  min-width: 18px;
+  text-align: center;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--csn-text-dim);
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+}
+
+#csn-pane .csn-label {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--csn-text);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+#csn-pane .csn-label:hover { color: var(--csn-accent); }
+
+#csn-pane .csn-star,
+#csn-pane .csn-edit {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--csn-text-dim);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, opacity 0.12s;
+}
+#csn-pane .csn-edit { opacity: 0; }
+#csn-pane .csn-item:hover .csn-edit { opacity: 1; }
+#csn-pane .csn-star:hover,
+#csn-pane .csn-edit:hover {
+  background: var(--csn-hover);
+  color: var(--csn-text);
+}
+#csn-pane .csn-star.is-on { color: var(--csn-accent); opacity: 1; }
+
+/* ---- inline rename -------------------------------------------------------- */
+#csn-pane .csn-rename-input {
+  flex: 1;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 3px 6px;
+  border: 1px solid var(--csn-accent);
+  border-radius: 6px;
+  background: var(--csn-bg-soft);
+  color: var(--csn-text);
+  outline: none;
+  min-width: 0;
+}
+
+/* ---- empty state ---------------------------------------------------------- */
+#csn-pane .csn-empty {
+  font-size: 12.5px;
+  color: var(--csn-text-dim);
+  padding: 16px 12px;
+  line-height: 1.5;
+}
+
+/* ---- collapsed rail ------------------------------------------------------- */
+#csn-pane.csn-collapsed { width: 16px !important; }
+#csn-pane.csn-collapsed .csn-header,
+#csn-pane.csn-collapsed .csn-body { display: none; }
+#csn-pane .csn-expand {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ---- target highlight when you jump to a message -------------------------- */
+.csn-flash {
+  animation: csn-flash-anim 1.2s ease;
+  border-radius: 12px;
+}
+@keyframes csn-flash-anim {
+  0%   { box-shadow: 0 0 0 3px rgba(201, 100, 66, 0.0); }
+  25%  { box-shadow: 0 0 0 3px rgba(201, 100, 66, 0.45); }
+  100% { box-shadow: 0 0 0 3px rgba(201, 100, 66, 0.0); }
+}
+
+/* ---- footer (uniform with other gauraverse extensions) -------------------- */
+#csn-pane .csn-ftr {
+  flex-shrink: 0;
+  padding: 8px 14px 12px;
+}
+#csn-pane .csn-ftr-line {
+  height: 1px;
+  width: 100%;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, transparent 0%, var(--csn-accent) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: csn-ftr-line 4s linear infinite;
+  opacity: 0.7;
+}
+@keyframes csn-ftr-line {
+  0%   { background-position: 150% 0; }
+  100% { background-position: -150% 0; }
+}
+#csn-pane .csn-ftr-top {
+  font-size: 11.5px;
+  text-align: center;
+  color: var(--csn-text-dim);
+}
+#csn-pane .csn-heart {
+  display: inline-block;
+  color: var(--csn-accent);
+  animation: csn-heartbeat 1.3s ease-in-out infinite;
+}
+@keyframes csn-heartbeat {
+  0%, 100% { transform: scale(1); }
+  12%      { transform: scale(1.28); }
+  24%      { transform: scale(1); }
+  36%      { transform: scale(1.16); }
+  50%      { transform: scale(1); }
+}
+#csn-pane .csn-ftr-author {
+  color: var(--csn-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+#csn-pane .csn-ftr-author:hover { text-decoration: underline; }
+
+#csn-pane .csn-ftr-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 9px;
+  gap: 8px;
+}
+#csn-pane .csn-ftr-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+#csn-pane .csn-ftr-bolt {
+  font-size: 10px;
+  animation: csn-flicker 3s linear infinite;
+}
+@keyframes csn-flicker {
+  0%, 88%, 100% { opacity: 1; }
+  90% { opacity: 0.3; }
+  92% { opacity: 1; }
+  94% { opacity: 0.5; }
+  96% { opacity: 1; }
+}
+#csn-pane .csn-ftr-num {
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--csn-accent);
+  font-variant-numeric: tabular-nums;
+}
+#csn-pane .csn-ftr-lbl {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--csn-text-dim);
+}
+#csn-pane .csn-ftr-version {
+  font-family: ui-monospace, "JetBrains Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: var(--csn-text-dim);
+  white-space: nowrap;
+}
+#csn-pane .csn-ftr-dot { margin: 0 2px; opacity: 0.6; }
+#csn-pane .csn-ftr-private { color: var(--csn-accent); }
+
+/* keep footer hidden when the pane is collapsed to a rail */
+#csn-pane.csn-collapsed .csn-ftr { display: none; }
