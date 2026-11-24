@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Claude Section Navigator",
-  "version": "1.0.0",
+  "name": "Claude Navigator",
+  "version": "4.0.0",
   "description": "A Word-style navigation pane for claude.ai. Jump to any of your prompts, star important ones, and rename sections inline.",
   "author": "Gaurav",
   "icons": {
@@ -11,7 +11,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Claude Section Navigator",
+    "default_title": "Claude Navigator",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -22,12 +22,22 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://claude.ai/*"],
-      "js": ["content.js"],
-      "css": ["styles.css"],
+      "matches": [
+        "https://claude.ai/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["storage"],
-  "host_permissions": ["https://claude.ai/*"]
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://claude.ai/*"
+  ]
 }

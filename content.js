@@ -39,13 +39,15 @@
     ],
     // Pixel width of the navigation pane when expanded.
     paneWidth: 290,
-    // Width of the collapsed rail.
-    railWidth: 16,
+    // How far the floating handle pokes left past the chat's left edge,
+    // so it sits visually over the sidebar seam when the pane is collapsed.
+    handleOverhang: 14,
     // How often to re-check for layout/conversation changes (ms).
     pollInterval: 700,
   };
 
   const PANE_ID = "csn-pane";
+  const HANDLE_ID = "csn-handle";
   const NS = "csn"; // storage namespace prefix
 
   /* ---------------------------------------------------------------------------
@@ -233,21 +235,47 @@
       return { left: Math.max(0, containerLeft), sidebarRight };
     },
 
-    apply(pane, collapsed) {
-      const width = collapsed ? CONFIG.railWidth : CONFIG.paneWidth;
+    apply(pane, handle, collapsed) {
       const { left } = this._lastMeasure || { left: 0 };
-      pane.style.left = `${left}px`;
-      pane.style.width = `${width}px`;
+      const leftPx = `${left}px`;
 
-      if (this.scrollContainer && document.contains(this.scrollContainer)) {
-        this.scrollContainer.style.transition = "padding-left .2s ease";
-        this.scrollContainer.style.paddingLeft = `${width}px`;
+      // Only touch the DOM when a value actually changed — otherwise every
+      // poll tick restyles the pane + scroll container and the chat "dances".
+      if (pane.style.left !== leftPx) pane.style.left = leftPx;
+
+      if (collapsed) {
+        // Collapsed: pane becomes invisible, no padding on the chat, and a
+        // discreet floating handle sits at the sidebar's right edge.
+        if (pane.style.width !== "0px") pane.style.width = "0px";
+        if (this.scrollContainer && document.contains(this.scrollContainer)) {
+          if (this.scrollContainer.style.paddingLeft !== "") {
+            this.scrollContainer.style.paddingLeft = "";
+          }
+        }
+        if (handle) {
+          // Anchor the handle just inside the chat area, overlapping sidebar.
+          const handleLeft = `${Math.max(0, left - CONFIG.handleOverhang)}px`;
+          if (handle.style.left !== handleLeft) handle.style.left = handleLeft;
+          if (handle.style.display !== "flex") handle.style.display = "flex";
+        }
+      } else {
+        // Expanded: full pane, chat shifted over, handle hidden.
+        const widthPx = `${CONFIG.paneWidth}px`;
+        if (pane.style.width !== widthPx) pane.style.width = widthPx;
+        if (this.scrollContainer && document.contains(this.scrollContainer)) {
+          if (this.scrollContainer.style.paddingLeft !== widthPx) {
+            this.scrollContainer.style.paddingLeft = widthPx;
+          }
+        }
+        if (handle && handle.style.display !== "none") {
+          handle.style.display = "none";
+        }
       }
     },
 
-    refresh(pane, messages, collapsed) {
+    refresh(pane, handle, messages, collapsed) {
       this._lastMeasure = this.measure(messages);
-      this.apply(pane, collapsed);
+      this.apply(pane, handle, collapsed);
     },
 
     reset() {
@@ -304,15 +332,27 @@
               <span class="csn-ftr-lbl">Sections</span>
             </div>
             <div class="csn-ftr-version">
-              V1.0 <span class="csn-ftr-dot">&bull;</span> <span class="csn-ftr-private">LOCAL &amp; PRIVATE</span>
+              V4.0 <span class="csn-ftr-dot">&bull;</span> <span class="csn-ftr-private">LOCAL &amp; PRIVATE</span>
             </div>
           </div>
         </footer>
-        <button class="csn-expand" title="Open navigation" aria-label="Open navigation" hidden>
-          <svg viewBox="0 0 16 16" width="15" height="15"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
       `;
+
+      // Separate floating handle — lives outside the pane so it stays visible
+      // even when the pane is collapsed to width 0.
+      const handle = document.createElement("button");
+      handle.id = HANDLE_ID;
+      handle.className = "csn-handle";
+      handle.type = "button";
+      handle.title = "Open Navigator";
+      handle.setAttribute("aria-label", "Open Navigator");
+      handle.style.display = "none";
+      handle.innerHTML = `
+        <svg viewBox="0 0 16 16" width="13" height="13"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      `;
+
       this.el = pane;
+      this.handleEl = handle;
       this.listEl = pane.querySelector(".csn-all");
       this.starredEl = pane.querySelector(".csn-starred");
       this.starredWrap = pane.querySelector(".csn-starred-wrap");
@@ -322,17 +362,20 @@
       pane.querySelector(".csn-collapse").addEventListener("click", () =>
         App.setCollapsed(true)
       );
-      pane.querySelector(".csn-expand").addEventListener("click", () =>
-        App.setCollapsed(false)
-      );
+      handle.addEventListener("click", () => App.setCollapsed(false));
+
+      // (The old "whole rail is a click target" logic is gone — there is no
+      // rail anymore. The floating handle IS the only hit target.)
 
       document.body.appendChild(pane);
+      document.body.appendChild(handle);
       return pane;
     },
 
     setCollapsedUI(collapsed) {
       this.el.classList.toggle("csn-collapsed", collapsed);
-      this.el.querySelector(".csn-expand").hidden = !collapsed;
+      // Visibility of pane vs. handle is driven by Layout.apply() so that
+      // the handle only shows after we've measured where to park it.
     },
 
     scrollToMessage(item) {
@@ -473,7 +516,19 @@
       this.tick(true);
 
       // React to new messages / layout shifts.
-      const obs = new MutationObserver(() => this.scheduleTick());
+      // IMPORTANT: skip mutations that happened inside our own pane — otherwise
+      // every render we do triggers the observer, which schedules another
+      // render, which triggers the observer... the hovered/last section ends up
+      // "dancing" as it gets rebuilt many times a second.
+      const obs = new MutationObserver((muts) => {
+        for (let i = 0; i < muts.length; i++) {
+          const t = muts[i].target;
+          if (Panel.el && (t === Panel.el || Panel.el.contains(t))) continue;
+          if (Panel.handleEl && (t === Panel.handleEl || Panel.handleEl.contains(t))) continue;
+          this.scheduleTick();
+          return;
+        }
+      });
       obs.observe(document.body, { childList: true, subtree: true });
 
       // Safety net for SPA route changes + late-loading layout.
@@ -489,8 +544,9 @@
     tick(force) {
       const convId = getConversationId();
       if (!convId) {
-        // Not in a conversation (e.g. home screen) — hide the pane.
+        // Not in a conversation (e.g. home screen) — hide pane AND handle.
         Panel.el.style.display = "none";
+        if (Panel.handleEl) Panel.handleEl.style.display = "none";
         Layout.reset();
         return;
       }
@@ -510,7 +566,7 @@
 
     refreshLayout(messages) {
       const msgs = messages || Scanner.scan();
-      Layout.refresh(Panel.el, msgs, this.ui.collapsed);
+      Layout.refresh(Panel.el, Panel.handleEl, msgs, this.ui.collapsed);
     },
 
     setCollapsed(collapsed) {

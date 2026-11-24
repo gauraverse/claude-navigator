@@ -211,15 +211,72 @@ html[data-mode="dark"] #csn-pane {
   line-height: 1.5;
 }
 
-/* ---- collapsed rail ------------------------------------------------------- */
-#csn-pane.csn-collapsed { width: 16px !important; }
+/* ---- collapsed state (no rail) ------------------------------------------- */
+/* When collapsed the pane is visually gone — zero width, no border, nothing
+   reserved in the layout. The chat uses the full available space. */
+#csn-pane.csn-collapsed {
+  width: 0 !important;
+  border-right: none;
+  background: transparent;
+  box-shadow: none;
+  overflow: hidden;
+}
 #csn-pane.csn-collapsed .csn-header,
-#csn-pane.csn-collapsed .csn-body { display: none; }
-#csn-pane .csn-expand {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
+#csn-pane.csn-collapsed .csn-body,
+#csn-pane.csn-collapsed .csn-ftr { display: none; }
+
+/* ---- floating handle (the only thing visible when collapsed) ------------- */
+#csn-handle {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  z-index: 41;
+  display: none;                 /* JS flips to flex when collapsed */
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--csn-bg, #faf9f5);
+  color: var(--csn-text-dim, #75716a);
+  border: 1px solid var(--csn-border, rgba(60,55,45,0.12));
+  box-shadow: 0 2px 6px rgba(40, 35, 30, 0.1);
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.82;
+  transition: background .18s ease, color .18s ease,
+              box-shadow .18s ease, opacity .18s ease,
+              transform .18s ease;
+}
+#csn-handle:hover {
+  background: #c96442;           /* Claude coral */
+  color: #fff;
+  border-color: #c96442;
+  box-shadow: 0 3px 10px rgba(201, 100, 66, 0.35);
+  opacity: 1;
+  transform: translateY(-50%) scale(1.08);
+}
+#csn-handle:active { transform: translateY(-50%) scale(0.96); }
+#csn-handle:focus-visible {
+  outline: 2px solid #c96442;
+  outline-offset: 2px;
+}
+
+/* Dark-mode tune for the handle. */
+html.dark #csn-handle,
+html[data-theme="dark"] #csn-handle,
+html[data-mode="dark"] #csn-handle {
+  background: #2a2825;
+  color: #a3a097;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+html.dark #csn-handle:hover,
+html[data-theme="dark"] #csn-handle:hover,
+html[data-mode="dark"] #csn-handle:hover {
+  background: #d97757;
+  color: #fff;
+  border-color: #d97757;
 }
 
 /* ---- target highlight when you jump to a message -------------------------- */
@@ -240,12 +297,12 @@ html[data-mode="dark"] #csn-pane {
 }
 #csn-pane .csn-ftr-line {
   height: 1px;
-  width: 100%;
-  margin-bottom: 10px;
+  width: 60%;                 /* slimmer — was 100% */
+  margin: 0 auto 10px;        /* centered */
   background: linear-gradient(90deg, transparent 0%, var(--csn-accent) 50%, transparent 100%);
   background-size: 200% 100%;
   animation: csn-ftr-line 4s linear infinite;
-  opacity: 0.7;
+  opacity: 0.6;
 }
 @keyframes csn-ftr-line {
   0%   { background-position: 150% 0; }
